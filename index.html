@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Stammering Practice — Neon Reveal</title>
+
+<style>
+  /* ---------- Base / Dark Neon Look ---------- */
+  :root{
+    --neon-1: #00eaff;
+    --neon-2: #7c3aed;
+    --bg-1: #05060a;
+    --card: rgba(20,20,22,0.55);
+    --glass-border: rgba(255,255,255,0.06);
+    --muted: #94a3b8;
+  }
+
+  html,body{height:100%;margin:0;}
+  body{
+    background:
+      radial-gradient(900px 300px at 10% 10%, rgba(0,255,200,0.04), transparent 8%),
+      radial-gradient(700px 300px at 90% 80%, rgba(124,58,237,0.03), transparent 8%),
+      var(--bg-1);
+    color:#dbeafe;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Arial;
+    padding:36px;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+
+  .container{
+    max-width:820px;
+    margin:0 auto;
+    background: var(--card);
+    border-radius:20px;
+    padding:28px;
+    border:1px solid var(--glass-border);
+    box-shadow: 0 20px 60px rgba(2,6,23,0.6);
+    backdrop-filter: blur(16px) saturate(140%);
+  }
+
+  h1{
+    margin:0;
+    text-align:center;
+    font-size:40px;
+    font-weight:800;
+    background: linear-gradient(90deg, var(--neon-1), var(--neon-2));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    text-shadow: 0 0 20px rgba(0,234,255,0.12);
+  }
+
+  p.definition{
+    text-align:center;
+    color:var(--muted);
+    margin-top:10px;
+    margin-bottom:22px;
+    line-height:1.45;
+  }
+
+  label{ display:block; margin-top:18px; color:#bfeffb; font-weight:600; }
+  select{
+    width:100%;
+    padding:12px 14px;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.02);
+    color:#dffcff;
+    font-size:16px;
+    margin-top:8px;
+    appearance:none;
+    -webkit-appearance:none;
+    box-shadow: 0 6px 18px rgba(2,6,23,0.6) inset;
+  }
+  select:focus{ outline:none; box-shadow:0 0 0 6px rgba(0,234,255,0.06); border-color: rgba(0,234,255,0.35); }
+
+  /* Output card */
+  #outputCard{
+    margin-top:22px;
+    padding:26px;
+    border-radius:16px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border:1px solid rgba(255,255,255,0.03);
+    min-height:200px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    overflow:hidden;
+  }
+
+  /* Word container (center) */
+  .wordWrap{ text-align:center; width:100%; }
+
+  /* H2 word - initial outline and left->right fill animation */
+  .word {
+    font-size:56px;
+    line-height:1;
+    font-weight:800;
+    margin:0;
+    padding:0;
+    letter-spacing: -0.02em;
+    color: transparent; /* start transparent so -webkit-text-stroke shows as outline */
+    -webkit-text-stroke: 1.6px rgba(0,234,255,0.95); /* neon outline */
+    position:relative;
+    display:inline-block;
+    /* background fill gradient that will be clipped to text */
+    background: linear-gradient(90deg, var(--neon-1) 0%, var(--neon-2) 60%);
+    background-size: 0% 100%; /* animate width from 0% -> 100% */
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 18px rgba(0,234,255,0.12), 0 0 28px rgba(124,58,237,0.06);
+    transition: transform .25s ease;
+  }
+
+  /* Animated outline -> fill: we animate background-size left-to-right,
+     and fade the stroke out slightly at the end for cleaner fill (handled in keyframes) */
+  .reveal {
+    animation: fillReveal 4s ease forwards;
+  }
+
+  @keyframes fillReveal {
+    0%{
+      background-size: 0% 100%;
+      -webkit-text-stroke: 1.6px rgba(0,234,255,0.95);
+      filter: drop-shadow(0 0 10px rgba(0,234,255,0.45));
+    }
+    60%{
+      background-size: 65% 100%;
+      -webkit-text-stroke: 1.2px rgba(0,234,255,0.9);
+    }
+    100%{
+      background-size: 100% 100%;
+      -webkit-text-stroke: 0.6px rgba(124,58,237,0.6);
+      filter: drop-shadow(0 0 22px rgba(124,58,237,0.12));
+    }
+  }
+
+  /* Small sublabel */
+  .hint { margin-top:12px; color:#9feff8; opacity:0.65; font-weight:600; font-size:14px; }
+
+  /* appear animation when a word enters */
+  .enter {
+    animation: enterWord 0.6s cubic-bezier(.2,.9,.3,1) forwards;
+  }
+  @keyframes enterWord {
+    from { transform: translateY(18px) scale(.98); opacity:0; }
+    to   { transform: translateY(0) scale(1); opacity:1; }
+  }
+
+  /* responsive */
+  @media (max-width:640px){
+    .word{ font-size:38px; }
+    .container{ padding:20px; border-radius:14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Stammering</h1>
+  <p class="definition"><strong>Definition:</strong> Stammering (stuttering) interrupts fluent speech through repetitions, prolongations, blocks, broken words, fillers and revisions. Use the selectors below and practice with the animated reveal.</p>
+
+  <!-- TYPE OF STAMMERING -->
+  <label><strong>Select Type of Stammering:</strong></label>
+  <select id="typeSelect" onchange="loadSubTypes()">
+      <option value="">-- Select Type --</option>
+      <option value="repetition">Repetition</option>
+      <option value="prolongation">Prolongation</option>
+      <option value="blocks">Blocks</option>
+      <option value="broken">Broken Words</option>
+      <option value="fillers">Fillers</option>
+      <option value="revision">Revisions</option>
+      <option value="cluttering">Cluttering</option>
+  </select>
+
+  <!-- SUB TYPES APPEAR HERE -->
+  <label><strong>Select Sub-Type:</strong></label>
+  <select id="subTypeSelect"></select>
+
+  <!-- PROFESSION -->
+  <label><strong>Select Profession:</strong></label>
+  <select id="professionSelect" onchange="startPractice()">
+      <option value="">-- Select Profession --</option>
+      <option value="doctor">Doctor</option>
+      <option value="advocate">Advocate</option>
+      <option value="engineer">Engineer</option>
+      <option value="teacher">Teacher / Professor</option>
+      <option value="student">Student</option>
+      <option value="tvactor">TV Actor</option>
+      <option value="singer">Singer</option>
+      <option value="other">Others</option>
+  </select>
+
+  <!-- OUTPUT -->
+  <div id="outputCard">
+    <div class="wordWrap">
+      <div id="wordBoxInner">
+        <!-- word will be created here -->
+      </div>
+      <div class="hint">Word outlines fill left → right over 4 seconds — speak as it fills.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ----------------------------
+   Nested data: Type -> Subtype -> Profession -> [words]
+   Add or edit words here.
+   ---------------------------- */
+const data = {
+  repetition: {
+    "Sound Repetition": {
+      doctor: ["scan","syringe","scope","saline","stent","swab","scanbed","sample","scale","stat"],
+      advocate: ["section","sign","suit","statute","state","stage","send","serve","seal","see"],
+      engineer: ["sensor","signal","server","switch","socket","segment","solder","scan","scale","sample"],
+      teacher: ["study","syllabus","subject","session","sentence","solve","speak","score","spell","search"],
+      student: ["study","solve","submit","score","skill","school","sample","session","spell","search"],
+      tvactor: ["scene","script","shot","say","scene2","sound","signal","speak","stage","strike"],
+      singer: ["sing","scale","sound","sustain","solo","soft","slide","shimmer","sample","signal"],
+      other: ["start","stop","see","say","show","sell","serve","shift","share","shine"]
+    },
+    "Syllable Repetition": {
+      doctor: ["pa-pa-tient","in-in-jection","ta-ta-blet","re-re-port","di-di-agnose","op-op-tion","cl-clinic","tu-tu-bes","va-va-lve","ec-ec-g"],
+      advocate: ["pe-pe-tition","ar-ar-gument","ap-ap-peal","cli-cli-ent","do-do-cument","ju-ju-dge","st-statement","he-he-aring","ve-ve-rdict","co-co-urt"],
+      engineer: ["ci-ci-rcuit","de-de-sign","so-software","mo-mo-dule","se-se-nsor","ar-ar-chive","te-te-sting","sy-sy-stem","ne-ne-twork","pr-pr-ototype"],
+      teacher: ["le-le-sson","ch-cha-pter","su-subject","no-no-tebook","ex-ex-am","re-re-vision","pr-practice","as-as-ignment","gr-gra-mmar","th-theory"],
+      student: ["ho-ho-mework","pro-pro-ject","ex-ex-am","no-no-tebook","re-re-vision","sta-station","le-le-sson","cl-cl-ass","su-su-bject","ta-ta-ble"],
+      tvactor: ["di-di-alogue","sc-scene","sc-sc-ript","ac-ac-tion","au-au-diton","pe-pe-rformance","ma-ma-keup","ex-ex-pression","ch-ch-aracter","di-di-rector"],
+      singer: ["me-me-lody","ry-ry-thm","pi-pitch","ho-ho-nor","no-no-te","so-so-nd","li-li-yrics","vo-vo-cal","ch-chorus","re-re-cord"],
+      other: ["he-he-llo","ma-ma-rket","of-of-fice","tr-tra-vel","fa-fa-mily","sh-shopping","mo-mo-rning","fr-friend","di-dinner","mu-music"]
+    },
+    "Word Repetition": {
+      doctor: { doctor: [] } // fallback intentionally empty – will be filled later by general lists
+    },
+    "Phrase Repetition": {
+      doctor: { doctor: [] } // fallback
+    }
+  },
+
+  prolongation: {
+    "Voiced Prolongation": {
+      doctor: ["mmmmmedicine","aaaaarm","rrrrreport","lllllungs","vvvvvital"],
+      engineer: ["rrrrrobot","vvvvvoltage","mmmmmodule","sssssignal"],
+      student: ["ssssstudy","mmmmmaths","rrrrreading"],
+      teacher: ["llllllllesson","mmmmmaterial","sssssubject"],
+      advocate: ["lllllaw","rrrrrreason","vvvvverdict"],
+      tvactor: ["mmmmmmic","ssssscript","rrrrrole"],
+      singer: ["mmmmmelody","sssssong","vvvvvvoice"],
+      other: ["ssssstart","mmmmmove","rrrrrun"]
+    },
+    "Voiceless Prolongation": {
+      doctor: ["ssssscan","fffffirst","tttttest"],
+      engineer: ["sssssystem","ffffforce","tttttool"],
+      student: ["ssssstudy","fffffocus","ttttext"],
+      teacher: ["ssssslesson","ffffformat","ttttopic"],
+      advocate: ["ssssstatute","fffffile","ttttrial"],
+      tvactor: ["ssssscene","fffffade","tttttake"],
+      singer: ["sssssong","fffffill","tttttone"],
+      other: ["ssssstop","fffffast","tttttime"]
+    }
+  },
+
+  blocks: {
+    "Silent Block": {
+      doctor: ["(…patient)","(…scan)","(…report)","(…check)","(…wait)"],
+      engineer: ["(…compile)","(…deploy)","(…debug)","(…test)","(…run)"],
+      student: ["(…answer)","(…think)","(…write)","(…read)","(…speak)"],
+      teacher: ["(…explain)","(…lecture)","(…review)","(…pause)","(…listen)"],
+      advocate: ["(…object)","(…respond)","(…address)","(…present)","(…plead)"],
+      tvactor: ["(…action)","(…cut)","(…wait)","(…silent)","(…breathe)"],
+      singer: ["(…hold)","(…breathe)","(…wait)","(…note)","(…rest)"],
+      other: ["(…pause)","(…think)","(…wait)","(…stop)","(…silent)"]
+    },
+    "Audible Block": {
+      doctor: ["uh…doctor","um…clinic","eh…scan","ah…report","uh…nurse"],
+      engineer: ["uh…code","um…deploy","eh…test","ah…fix","uh…model"],
+      student: ["uh…answer","um…homework","eh…exam","ah…project","uh…study"],
+      teacher: ["uh…lesson","um…topic","eh…grammar","ah…explain","uh…question"],
+      advocate: ["uh…case","um…evidence","eh…witness","ah…plea","uh…judge"],
+      tvactor: ["uh…line","um…take","eh…action","ah…scene","uh…mark"],
+      singer: ["uh…note","um…sing","eh…tone","ah…pitch","uh…chorus"],
+      other: ["uh…hello","um…sorry","eh…wait","ah…okay","uh…thanks"]
+    }
+  },
+
+  broken: {
+    "Silent Break": {
+      doctor: ["pa—tient","me—dicine","di—agnose","re—port","su—rgerY"],
+      student: ["ex—am","pro—ject","stu—dy","re—vision","no—tes"],
+      teacher: ["les—son","ch—apter","ex—plain","re—view","te—ach"]
+    },
+    "Audible Break": {
+      doctor: ["pa—(uh)—tient","me—(um)—dicine","di—(eh)—agnose"],
+      student: ["ex—(uh)—am","pro—(um)—ject","stu—(eh)—dy"]
+    },
+    "Tension Break": {
+      doctor: ["pa—(pause)—tient","re—(tension)—port"],
+      student: ["ex—(pause)—am","pro—(tension)—ject"]
+    }
+  },
+
+  fillers: {
+    "Natural Fillers": {
+      doctor: ["um","uh","well","so","okay"],
+      advocate: ["um","uh","well","so","look"],
+      student: ["um","uh","like","you know","well"],
+      other: ["um","uh","okay","like","you know"]
+    },
+    "Avoidance Fillers": {
+      doctor: ["actually","basically","maybe","perhaps","right"],
+      advocate: ["actually","basically","perhaps","obviously","clearly"],
+      student: ["maybe","kinda","actually","sorta","like"],
+      other: ["maybe","actually","kinda","sorta","basically"]
+    }
+  },
+
+  revision: {
+    "Restarts": {
+      doctor: ["I need — I need to check","We should — we should review","Call — call the nurse"],
+      engineer: ["We must — we must test","Run — run the build","Deploy — deploy later"],
+      teacher: ["You will — you will learn","Read — read the chapter","Try — try the exercise"],
+      student: ["I will — I will study","I did — I did the assignment"]
+    },
+    "Substitutions": {
+      doctor: ["tablet → pill","injection → shot","report → file"],
+      student: ["exam → test","homework → assignment","project → task"]
+    }
+  },
+
+  cluttering: {
+    "Fast Rate": {
+      teacher: ["finishfast","talkfast","rushthrough","speedread","quicknote"],
+      student: ["rushstudy","fastwrite","speedsolve","fastread","hurryup"]
+    },
+    "Syllable Drops": {
+      doctor: ["pa-tient","di-agnosis","ther-a-pist"],
+      student: ["ex-am","pro-ject","home-work"]
+    },
+    "Disorganized Language": {
+      other: ["topic… notes… then… explain…","point… slide… then… stop"]
+    }
+  }
+};
+
+/* ----------------------------
+   Populate subtypes and handle practice flow
+   ---------------------------- */
+
+const typeSelect = document.getElementById('typeSelect');
+const subTypeSelect = document.getElementById('subTypeSelect');
+const professionSelect = document.getElementById('professionSelect');
+const wordBoxInner = document.getElementById('wordBoxInner');
+
+let playInterval = null;
+let currentList = [];
+let currentIndex = 0;
+
+/* Load subtypes when type changes (keeps your markup exact) */
+function loadSubTypes(){
+  const t = typeSelect.value;
+  subTypeSelect.innerHTML = '<option value="">-- Select Sub-Type --</option>';
+  if(!t || !data[t]) return;
+  Object.keys(data[t]).forEach(sub => {
+    const o = document.createElement('option');
+    o.value = sub;
+    o.textContent = sub;
+    subTypeSelect.appendChild(o);
+  });
+
+  // Clear any running practice
+  stopPractice();
+}
+
+/* Start/restart practice when profession or subtype changes */
+function startPractice(){
+  stopPractice();
+
+  const t = typeSelect.value;
+  const sub = subTypeSelect.value;
+  const prof = professionSelect.value;
+
+  // require all three
+  if(!t || !sub || !prof){
+    wordBoxInner.innerHTML = ''; 
+    return;
+  }
+
+  // get list safely
+  const list = (data[t] && data[t][sub] && data[t][sub][prof]) ? data[t][sub][prof] : [];
+
+  // if empty, try a fallback: check any profession-specific in same type/sub
+  if(!list || list.length === 0){
+    // try to collect words from any profession under this subtype (first found)
+    for(const p in (data[t][sub]||{})){
+      if(Array.isArray(data[t][sub][p]) && data[t][sub][p].length){
+        currentList = data[t][sub][p].slice();
+        break;
+      }
+    }
+  } else {
+    currentList = list.slice();
+  }
+
+  if(!currentList || currentList.length === 0){
+    wordBoxInner.innerHTML = '<div class="word enter" style="font-size:20px;color:#9fbfcc">No words available for this selection</div>';
+    return;
+  }
+
+  currentIndex = 0;
+  showNextWord(); // show one immediately
+  // animate each 4s (matching 4s fill animation)
+  playInterval = setInterval(showNextWord, 4200);
+}
+
+/* Stop current interval */
+function stopPractice(){
+  if(playInterval) { clearInterval(playInterval); playInterval = null; }
+  currentList = [];
+  currentIndex = 0;
+}
+
+/* Show next word: create element, add classes that trigger outline->fill animation */
+function showNextWord(){
+  if(!currentList || currentList.length === 0) return;
+  const w = currentList[currentIndex % currentList.length];
+  currentIndex++;
+
+  // clean container
+  wordBoxInner.innerHTML = '';
+
+  // create element
+  const el = document.createElement('h2');
+  el.className = 'word enter'; // base enter
+  el.textContent = w;
+
+  // force initial state: transparent with stroke - already from CSS .word; we add reveal class to animate
+  el.style.opacity = '0';
+  // wrap inner with .word to get fill animation (we separate because .word sets gradient fill)
+  const span = document.createElement('span');
+  span.className = 'word reveal';
+  span.textContent = w;
+
+  // Insert span into h2 (so enter animation applies to h2 and reveal applies to span)
+  el.innerHTML = ''; // clear
+  el.appendChild(span);
+
+  wordBoxInner.appendChild(el);
+
+  // force reflow then apply enter animation (ensures it will animate each time)
+  void el.offsetWidth;
+  el.style.opacity = '1';
+  el.classList.add('enter');
+
+  // ensure reveal restarts each time by forcing reflow on span
+  span.classList.remove('reveal');
+  void span.offsetWidth;
+  span.classList.add('reveal');
+}
+
+/* Hook events: subtype change or profession should restart practice */
+subTypeSelect.addEventListener('change', startPractice);
+professionSelect.addEventListener('change', startPractice);
+typeSelect.addEventListener('change', function(){ subTypeSelect.selectedIndex = 0; stopPractice(); });
+
+/* optional: start when page loads if defaults present */
+</script>
+</body>
+</html>
