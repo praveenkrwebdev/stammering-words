@@ -1,2 +1,2 @@
 # stammering-words
-tammering Practice
+Stammering Practice
