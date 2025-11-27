@@ -50,6 +50,7 @@
     background-clip:text;
     color:transparent;
     text-shadow: 0 0 20px rgba(0,234,255,0.12);
+    margin-top:40px;
   }
 
   p.definition{
@@ -60,7 +61,7 @@
     line-height:1.45;
   }
 
-  label{ display:block; margin-top:30px; color:#bfeffb; font-weight:600; }
+  label{ display:block; margin-top:18px; color:#bfeffb; font-weight:600; }
   select{
     width:100%;
     padding:12px 14px;
@@ -244,9 +245,18 @@ const data = {
       singer: ["me-me-lody","ry-ry-thm","pi-pitch","ho-ho-nor","no-no-te","so-so-nd","li-li-yrics","vo-vo-cal","ch-chorus","re-re-cord"],
       other: ["he-he-llo","ma-ma-rket","of-of-fice","tr-tra-vel","fa-fa-mily","sh-shopping","mo-mo-rning","fr-friend","di-dinner","mu-music"]
     },
-    "Word Repetition": {
-      doctor: { doctor: [] } // fallback intentionally empty – will be filled later by general lists
-    },
+    {
+  "Word Repetition": {
+    doctor: ["pain", "pressure", "treatment", "test", "follow-up", "medicine", "monitor", "risk", "symptom", "improve"],
+    advocate: ["evidence", "claim", "rights", "court", "case", "contract", "issue", "proof", "legal", "argument"],
+    engineer: ["system", "process", "test", "design", "error", "function", "model", "update", "build", "check"],
+    teacher: ["remember", "important", "example", "practice", "review", "focus", "repeat", "explain", "check", "understand"],
+    student: ["question", "example", "notes", "assignment", "understand", "help", "practice", "class", "topic", "explain"],
+    tvactor: ["line", "scene", "take", "emotion", "action", "camera", "timing", "cue", "script", "character"],
+    singer: ["note", "pitch", "voice", "rhythm", "tempo", "breath", "tone", "repeat", "practice", "chorus"],
+    other: ["really", "okay", "right", "just", "maybe", "again", "wait", "look", "actually", "sure"]
+  },
+
     "Phrase Repetition": {
       doctor: { doctor: [] } // fallback
     }
