@@ -392,45 +392,46 @@ function loadSubTypes(){
   showNotAvailable();
 }
 
-/* Always refresh output when dropdown changes */
-function startPractice(){
+function startPractice() {
   stopPractice();
 
   const t = typeSelect.value;
-  const s = subTypeSelect.value;
-  const p = professionSelect.value;
+  const sub = subTypeSelect.value;
+  const prof = professionSelect.value;
 
-  // Require all selections
-  if(!t || !s || !p){
-    showNotAvailable();
+  // Require all three selections
+  if (!t || !sub || !prof) {
+    wordBoxInner.innerHTML = "";
     return;
   }
 
-  // get list
-  let list = data?.[t]?.[s]?.[p] || [];
+  // Lookup words directly
+  let list = [];
 
-  // fallback to any profession
-  if(list.length === 0){
-    for(const prof in data[t][s]){
-      if(Array.isArray(data[t][s][prof]) && data[t][s][prof].length){
-        list = data[t][s][prof];
-        break;
-      }
-    }
+  if (
+    data[t] &&
+    data[t][sub] &&
+    data[t][sub][prof] &&
+    Array.isArray(data[t][sub][prof])
+  ) {
+    list = data[t][sub][prof];
   }
 
-  // If still empty
-  if(list.length === 0){
-    showNotAvailable();
+  // If no words → show NOT AVAILABLE
+  if (!list || list.length === 0) {
+    wordBoxInner.innerHTML =
+      '<div class="word enter" style="font-size:22px;color:#9fbfcc">No words available for this selection</div>';
     return;
   }
 
+  // Start playing words
   currentList = list.slice();
   currentIndex = 0;
 
-  showNextWord();  
+  showNextWord();
   playInterval = setInterval(showNextWord, 4200);
 }
+
 
 /* Show not available message */
 function showNotAvailable(){
