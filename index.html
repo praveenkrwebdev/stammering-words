@@ -370,11 +370,18 @@ let playInterval = null;
 let currentList = [];
 let currentIndex = 0;
 
-/* Load subtypes when type changes (keeps your markup exact) */
+/* Load subtypes when Type changes */
 function loadSubTypes(){
   const t = typeSelect.value;
+
   subTypeSelect.innerHTML = '<option value="">-- Select Sub-Type --</option>';
-  if(!t || !data[t]) return;
+  stopPractice();  // refresh output immediately
+
+  if(!t || !data[t]) {
+    showNotAvailable();
+    return;
+  }
+
   Object.keys(data[t]).forEach(sub => {
     const o = document.createElement('option');
     o.value = sub;
@@ -382,102 +389,92 @@ function loadSubTypes(){
     subTypeSelect.appendChild(o);
   });
 
-  // Clear any running practice
-  stopPractice();
+  showNotAvailable();
 }
 
-/* Start/restart practice when profession or subtype changes */
+/* Always refresh output when dropdown changes */
 function startPractice(){
   stopPractice();
 
   const t = typeSelect.value;
-  const sub = subTypeSelect.value;
-  const prof = professionSelect.value;
+  const s = subTypeSelect.value;
+  const p = professionSelect.value;
 
-  // require all three
-  if(!t || !sub || !prof){
-    wordBoxInner.innerHTML = ''; 
+  // Require all selections
+  if(!t || !s || !p){
+    showNotAvailable();
     return;
   }
 
-  // get list safely
-  const list = (data[t] && data[t][sub] && data[t][sub][prof]) ? data[t][sub][prof] : [];
+  // get list
+  let list = data?.[t]?.[s]?.[p] || [];
 
-  // if empty, try a fallback: check any profession-specific in same type/sub
-  if(!list || list.length === 0){
-    // try to collect words from any profession under this subtype (first found)
-    for(const p in (data[t][sub]||{})){
-      if(Array.isArray(data[t][sub][p]) && data[t][sub][p].length){
-        currentList = data[t][sub][p].slice();
+  // fallback to any profession
+  if(list.length === 0){
+    for(const prof in data[t][s]){
+      if(Array.isArray(data[t][s][prof]) && data[t][s][prof].length){
+        list = data[t][s][prof];
         break;
       }
     }
-  } else {
-    currentList = list.slice();
   }
 
-  if(!currentList || currentList.length === 0){
-    wordBoxInner.innerHTML = '<div class="word enter" style="font-size:20px;color:#9fbfcc">No words available for this selection</div>';
+  // If still empty
+  if(list.length === 0){
+    showNotAvailable();
     return;
   }
 
+  currentList = list.slice();
   currentIndex = 0;
-  showNextWord(); // show one immediately
-  // animate each 4s (matching 4s fill animation)
+
+  showNextWord();  
   playInterval = setInterval(showNextWord, 4200);
 }
 
-/* Stop current interval */
+/* Show not available message */
+function showNotAvailable(){
+  wordBoxInner.innerHTML =
+    '<div class="word enter" style="font-size:20px;color:#9fbfcc">No words available for this selection</div>';
+}
+
+/* Stop previous animations */
 function stopPractice(){
-  if(playInterval) { clearInterval(playInterval); playInterval = null; }
+  if(playInterval){
+    clearInterval(playInterval);
+    playInterval = null;
+  }
   currentList = [];
   currentIndex = 0;
 }
 
-/* Show next word: create element, add classes that trigger outline->fill animation */
+/* Word rotation animation */
 function showNextWord(){
-  if(!currentList || currentList.length === 0) return;
+  if(!currentList.length) return;
+
   const w = currentList[currentIndex % currentList.length];
   currentIndex++;
 
-  // clean container
   wordBoxInner.innerHTML = '';
 
-  // create element
-  const el = document.createElement('h2');
-  el.className = 'word enter'; // base enter
-  el.textContent = w;
+  const h2 = document.createElement('h2');
+  h2.className = 'word enter';
 
-  // force initial state: transparent with stroke - already from CSS .word; we add reveal class to animate
-  el.style.opacity = '0';
-  // wrap inner with .word to get fill animation (we separate because .word sets gradient fill)
   const span = document.createElement('span');
   span.className = 'word reveal';
   span.textContent = w;
 
-  // Insert span into h2 (so enter animation applies to h2 and reveal applies to span)
-  el.innerHTML = ''; // clear
-  el.appendChild(span);
+  h2.appendChild(span);
+  wordBoxInner.appendChild(h2);
 
-  wordBoxInner.appendChild(el);
-
-  // force reflow then apply enter animation (ensures it will animate each time)
-  void el.offsetWidth;
-  el.style.opacity = '1';
-  el.classList.add('enter');
-
-  // ensure reveal restarts each time by forcing reflow on span
-  span.classList.remove('reveal');
-  void span.offsetWidth;
-  span.classList.add('reveal');
+  void h2.offsetWidth; // restart animation
 }
 
-/* Hook events: subtype change or profession should restart practice */
+/* Attach listeners */
+typeSelect.addEventListener('change', loadSubTypes);
 subTypeSelect.addEventListener('change', startPractice);
 professionSelect.addEventListener('change', startPractice);
-typeSelect.addEventListener('change', function(){ subTypeSelect.selectedIndex = 0; stopPractice(); });
-
-/* optional: start when page loads if defaults present */
 </script>
+
 </body>
 </html>
