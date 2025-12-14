@@ -168,10 +168,41 @@ select {
   padding-right: 50px; /* space for arrow */
 }
 
+  input, button{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border-radius:10px;
+  border:none;
+  font-size:16px;
+}
+button{
+  background: linear-gradient(90deg,#00eaff,#7c3aed);
+  color:#000;
+  font-weight:700;
+  cursor:pointer;
+}
+
+
 </style>
 </head>
 <body>
 
+  <div id="loginBox" class="container">
+  <h1>Login</h1>
+
+  <label>Username</label>
+  <input id="username" type="text" placeholder="Enter username" />
+
+  <label>Password</label>
+  <input id="password" type="password" placeholder="Enter password" />
+
+  <button onclick="login()">Login</button>
+
+  <p id="loginError" style="color:red;margin-top:10px;"></p>
+</div>
+
+<div id="app" style="display:none">
 <div class="container">
   <h1>Stammering Practice Words</h1>
   <!-- <p class="definition"><strong>Definition:</strong> Stammering (stuttering) interrupts fluent speech through repetitions, prolongations, blocks, broken words, fillers and revisions. Use the selectors below and practice with the animated reveal.</p> -->
@@ -216,6 +247,7 @@ select {
       <div class="hint">Word outlines fill left → right over 4 seconds — speak as it fills.</div>
     </div>
   </div>
+</div>
 </div>
 
 <script>
@@ -679,6 +711,38 @@ function showNextWord(){
 typeSelect.addEventListener('change', loadSubTypes);
 subTypeSelect.addEventListener('change', startPractice);
 professionSelect.addEventListener('change', startPractice);
+
+
+  const DEMO_USER = "admin";
+const DEMO_PASS = "1234";
+
+function login(){
+  const u = document.getElementById("username").value;
+  const p = document.getElementById("password").value;
+
+  if(u === DEMO_USER && p === DEMO_PASS){
+    localStorage.setItem("loggedIn","true");
+    showApp();
+  } else {
+    document.getElementById("loginError").innerText = "Invalid credentials";
+  }
+}
+
+function showApp(){
+  document.getElementById("loginBox").style.display = "none";
+  document.getElementById("app").style.display = "block";
+}
+
+function logout(){
+  localStorage.removeItem("loggedIn");
+  location.reload();
+}
+
+// Auto-login if already logged in
+if(localStorage.getItem("loggedIn")==="true"){
+  showApp();
+}
+
 </script>
 
 </body>
